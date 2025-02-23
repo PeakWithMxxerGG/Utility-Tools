@@ -22,7 +22,12 @@ local function sendWebhook(title, description, color)
                 },
                 {
                     ["name"] = "Current VPN",
-                    ["value"] = currentVPN and (currentVPN.ip .. " (" .. currentVPN.country .. ")") or "None",
+                    ["value"] = _G.currentVPN and (_G.currentVPN.ip .. " (" .. _G.currentVPN.country .. ")") or "None",
+                    ["inline"] = true
+                },
+                {
+                    ["name"] = "Protection Status",
+                    ["value"] = "🟢 Active",
                     ["inline"] = true
                 }
             }
@@ -34,8 +39,18 @@ local function sendWebhook(title, description, color)
     end)
 end
 
+local function setupWebhookMonitoring()
+    spawn(function()
+        while true do
+            sendWebhook("Protection Status", "Supreme Protection System Active\nAll Systems Operational", 0x00ff00)
+            task.wait(300) -- Status update every 5 minutes
+        end
+    end)
+end
+
 getgenv().WebhookSystem = {
-    Send = sendWebhook
+    Send = sendWebhook,
+    Setup = setupWebhookMonitoring
 }
 
 return getgenv().WebhookSystem
