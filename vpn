@@ -1,1 +1,61 @@
+local VPNServers = {
+    {ip = "103.21.244.100", country = "US-Gaming", ping = 1, region = "Dallas", speed = "40Gbps", gaming = true, premium = true},
+    {ip = "104.16.0.110", country = "EU-Gaming", ping = 2, region = "Amsterdam", speed = "40Gbps", gaming = true, premium = true},
+    {ip = "188.114.96.70", country = "US-Central", ping = 3, region = "Chicago", speed = "20Gbps", gaming = true},
+    {ip = "190.93.240.80", country = "CA", ping = 4, region = "Toronto", speed = "20Gbps", gaming = true},
+    {ip = "103.21.244.10", country = "US-East", ping = 5, region = "New York", speed = "10Gbps"},
+    {ip = "131.0.72.90", country = "KR", ping = 6, region = "Seoul", speed = "20Gbps", gaming = true},
+    {ip = "104.16.0.20", country = "US-West", ping = 8, region = "Los Angeles", speed = "10Gbps"}
+}
 
+local function generateIPV4()
+    return string.format("%d.%d.%d.%d", math.random(1,255), math.random(0,255), math.random(0,255), math.random(0,255))
+end
+
+local function generateMacAddress()
+    local mac = {}
+    for i = 1, 6 do
+        table.insert(mac, string.format("%02x", math.random(0, 255)))
+    end
+    return table.concat(mac, ":")
+end
+
+local function generateHWID()
+    local template = "SUPREME-%x-%x-%x-%x"
+    return string.format(template, math.random(0, 0xffffffff), math.random(0, 0xffffffff), math.random(0, 0xffffffff), math.random(0, 0xffffffff))
+end
+
+local function spoofNetworkIdentity()
+    _G.spoofedIP = generateIPV4()
+    _G.spoofedMAC = generateMacAddress()
+    _G.spoofedHWID = generateHWID()
+    game:GetService("RbxAnalyticsService"):GetClientId = function() return _G.spoofedHWID end
+    game:GetService("NetworkClient"):SetOutgoingKBPSLimit(math.huge)
+    WebhookSystem.Send("🌐 Network Identity", "Spoofed:\nIP: ".._G.spoofedIP.."\nMAC: ".._G.spoofedMAC.."\nHWID: ".._G.spoofedHWID, 0x00ff00)
+end
+
+local function connectVPN()
+    _G.currentVPN = VPNServers[math.random(1, #VPNServers)]
+    local oldPing = game:GetService("Stats").Network.ServerStatsItem["Data Ping"]
+    oldPing.GetValue = function() return _G.currentVPN.ping + math.random(-1, 1) end
+    WebhookSystem.Send("🔒 VPN", "Connected: ".._G.currentVPN.country.." | Ping: ".._G.currentVPN.ping.."ms | Speed: ".._G.currentVPN.speed, 0x00ff00)
+    return _G.currentVPN
+end
+
+local function setupVPNProtection()
+    spawn(function()
+        while true do
+            spoofNetworkIdentity()
+            connectVPN()
+            task.wait(300)
+        end
+    end)
+end
+
+getgenv().VPNSystem = {
+    Connect = connectVPN,
+    SpoofIdentity = spoofNetworkIdentity,
+    Setup = setupVPNProtection
+}
+
+return getgenv().VPNSystem
