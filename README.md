@@ -12,4 +12,11 @@ A collection of utility tools and enhancements for Roblox development.
 - Client Improvements
 - Game Optimizations
 
-## Usage
+## Usage - Requirements
+- Any Roblox executor (Velocity,Swift,AWP.GG)
+- Auto-execute folder (optional)
+
+## Installation Steps
+
+1. Download your preferred executor
+2. Copy this script:
