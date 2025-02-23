@@ -1,1 +1,41 @@
+local WebhookURL = "YOUR_WEBHOOK_URL_HERE"
 
+local function sendWebhook(title, description, color)
+    local data = {
+        ["embeds"] = {{
+            ["title"] = "👑 " .. title,
+            ["description"] = description,
+            ["color"] = color or 0x00ff00,
+            ["footer"] = {
+                ["text"] = "Supreme Protection V10 | " .. os.date("%Y-%m-%d %H:%M:%S")
+            },
+            ["fields"] = {
+                {
+                    ["name"] = "Game",
+                    ["value"] = game.PlaceId .. " | " .. game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name,
+                    ["inline"] = true
+                },
+                {
+                    ["name"] = "Player",
+                    ["value"] = LocalPlayer.Name .. " | " .. LocalPlayer.UserId,
+                    ["inline"] = true
+                },
+                {
+                    ["name"] = "Current VPN",
+                    ["value"] = currentVPN and (currentVPN.ip .. " (" .. currentVPN.country .. ")") or "None",
+                    ["inline"] = true
+                }
+            }
+        }}
+    }
+    
+    pcall(function()
+        HttpService:PostAsync(WebhookURL, HttpService:JSONEncode(data))
+    end)
+end
+
+getgenv().WebhookSystem = {
+    Send = sendWebhook
+}
+
+return getgenv().WebhookSystem
