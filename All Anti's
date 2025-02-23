@@ -1,1 +1,454 @@
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local NetworkClient = game:GetService("NetworkClient")
+local RunService = game:GetService("RunService")
+local HttpService = game:GetService("HttpService")
+local TeleportService = game:GetService("TeleportService")
+local CoreGui = game:GetService("CoreGui")
+local ScriptContext = game:GetService("ScriptContext")
+local LogService = game:GetService("LogService")
+local RbxAnalyticsService = game:GetService("RbxAnalyticsService")
+local Stats = game:GetService("Stats")
+local NetworkSettings = settings().Network
+local UserInputService = game:GetService("UserInputService")
+local GuiService = game:GetService("GuiService")
+local StarterGui = game:GetService("StarterGui")
+local Lighting = game:GetService("Lighting")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local MarketplaceService = game:GetService("MarketplaceService")
+local MemoryStoreService = game:GetService("MemoryStoreService")
+local DebugService = game:GetService("DebugService")
+local PolicyService = game:GetService("PolicyService")
+local VirtualUser = game:GetService("VirtualUser")
+local ContextActionService = game:GetService("ContextActionService")
+local TweenService = game:GetService("TweenService")
+local PathfindingService = game:GetService("PathfindingService")
 
+local VPNServers = {
+    {ip = "103.21.244.100", country = "US-Gaming", ping = 1, region = "Dallas", speed = "40Gbps", gaming = true, premium = true, encryption = "AES-256", protocol = "UDP", recovery = true},
+    {ip = "104.16.0.110", country = "EU-Gaming", ping = 2, region = "Amsterdam", speed = "40Gbps", gaming = true, premium = true, encryption = "AES-256", protocol = "UDP", recovery = true},
+    {ip = "188.114.96.70", country = "US-Central", ping = 3, region = "Chicago", speed = "20Gbps", gaming = true, encryption = "AES-256", protocol = "TCP", recovery = true},
+    {ip = "190.93.240.80", country = "CA", ping = 4, region = "Toronto", speed = "20Gbps", gaming = true, encryption = "AES-256", protocol = "TCP", recovery = true},
+    {ip = "103.21.244.10", country = "US-East", ping = 5, region = "New York", speed = "10Gbps", encryption = "AES-256", protocol = "TCP", recovery = true}
+}
+
+local BadFunctions = {"kick", "ban", "punish", "benx", "crash", "sanction", "violation", "blacklist", "freeze", "halt", "stop", "destroy", "delete", "remove", "terminate", "shutdown", "report", "warn", "moderate", "filter", "check", "verify", "authenticate", "validate", "detect", "analyze", "monitor", "track", "log", "record", "capture", "screenshot", "teleport", "tp", "send", "force", "kill", "damage", "hurt", "break", "exploit", "hack", "script", "remote", "event", "function", "method", "property", "value", "parent", "child", "descendant", "ancestor", "relative", "connection", "signal", "bindable", "hook", "meta", "env", "registry", "memory", "process", "thread", "network", "packet", "send", "receive", "replicate", "sync", "stream", "buffer", "secure", "protect", "encrypt", "decrypt", "hash", "sign", "verify", "validate", "module", "require", "load", "execute", "run", "compile", "interpret", "evaluate", "gui", "interface", "window", "frame", "button", "text", "input", "output", "physics", "collision", "velocity", "acceleration", "force", "torque", "mass", "gravity", "animate", "tween", "interpolate", "ease", "lerp", "slerp", "spring", "bounce", "sound", "audio", "play", "pause", "resume", "stop", "volume", "pitch", "render", "draw", "paint", "color", "material", "texture", "mesh", "model", "debug", "trace", "profile", "analyze", "dump", "decompile", "disassemble", "inspect", "examine"}
+
+local ProtectedInstances = {"LocalPlayer", "PlayerGui", "Backpack", "Character", "PlayerScripts", "Camera", "Workspace", "CoreGui", "StarterGui", "Lighting", "ReplicatedStorage", "ReplicatedFirst", "ServerStorage", "ServerScriptService", "Teams", "SoundService", "Chat", "TextChatService", "PhysicsService", "NetworkClient", "MemoryStoreService", "DebugService", "PolicyService", "VirtualUser", "ContextActionService", "TweenService", "PathfindingService"}
+
+local function sendWebhook(title, description, color)
+    local data = {
+        ["embeds"] = {{
+            ["title"] = "👑 " .. title,
+            ["description"] = description,
+            ["color"] = color or 0x00ff00,
+            ["footer"] = {["text"] = "Supreme Sigma Protection V10 | " .. os.date("%Y-%m-%d %H:%M:%S")},
+            ["fields"] = {
+                {["name"] = "Game", ["value"] = game.PlaceId .. " | " .. game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name, ["inline"] = true},
+                {["name"] = "Sigma Player", ["value"] = LocalPlayer.Name .. " | " .. LocalPlayer.UserId, ["inline"] = true},
+                {["name"] = "Protection Status", ["value"] = "🟢 SIGMA ACTIVE", ["inline"] = true}
+            }
+        }}
+    }
+    pcall(function() HttpService:PostAsync(G.Webhook, HttpService:JSONEncode(data)) end)
+end
+
+local function generateFakeThread() return coroutine.create(function() while true do task.wait(9e9) end end) end
+local function generateEncryptionKey() local key = "" for i = 1, 32 do key = key .. string.char(math.random(33, 126)) end return key end
+
+local function encryptString(str, key)
+    local encrypted = ""
+    for i = 1, #str do
+        local byte = string.byte(str, i)
+        local keyByte = string.byte(key, (i-1) % #key + 1)
+        encrypted = encrypted .. string.char(bit32.bxor(byte, keyByte))
+    end
+    return encrypted
+end
+
+local function spoofMemory()
+    local fakeMemory = {}
+    for i = 1, 1000 do
+        fakeMemory[i] = {
+            thread = generateFakeThread(),
+            data = string.rep("🛡️", 1000),
+            functions = {},
+            events = {},
+            connections = {},
+            instances = {},
+            properties = {},
+            methods = {},
+            encryption = generateEncryptionKey(),
+            packets = {},
+            network = {},
+            security = {},
+            protection = {},
+            anticheat = {},
+            validation = {},
+            verification = {},
+            recovery = {
+                enabled = true,
+                attempts = 0,
+                lastCheck = os.time(),
+                backups = {},
+                snapshots = {},
+                checkpoints = {},
+                rollbacks = {},
+                repairs = {}
+            },
+            debug = {
+                enabled = false,
+                traces = {},
+                profiles = {},
+                analysis = {},
+                dumps = {},
+                inspections = {}
+            }
+        }
+    end
+    return fakeMemory
+end
+
+local function protectThreads()
+    local protected = {}
+    for _, thread in pairs(debug.getregistry()) do
+        if type(thread) == "thread" then
+            table.insert(protected, {
+                original = thread,
+                fake = generateFakeThread(),
+                encryption = generateEncryptionKey(),
+                memory = spoofMemory(),
+                security = {
+                    validation = true,
+                    encryption = true,
+                    protection = true,
+                    anticheat = true,
+                    recovery = {
+                        enabled = true,
+                        backups = {},
+                        snapshots = {}
+                    }
+                }
+            })
+            coroutine.wrap(function()
+                while task.wait() do
+                    thread = protected[#protected].fake
+                end
+            end)()
+        end
+    end
+    return protected
+end
+
+local function setupNetworkProtection()
+    NetworkSettings.IncomingReplicationLag = 0
+    NetworkSettings.NetworkOwnerRate = math.huge
+    NetworkSettings.PhysicsSend = math.huge
+    NetworkSettings.ReceiveRate = math.huge
+    NetworkSettings.SendRate = math.huge
+    NetworkSettings.DataSendRate = math.huge
+    NetworkSettings.RenderStreamRate = math.huge
+    NetworkSettings.PhysicsReceiveRate = math.huge
+    NetworkSettings.ClientPhysicsSend = math.huge
+    NetworkClient:SetOutgoingKBPSLimit(math.huge)
+
+    local function spoofNetworkStats()
+        local networkStats = Stats.Network
+        local serverStats = networkStats.ServerStatsItem
+        local dataPing = serverStats["Data Ping"]
+        hookfunction(dataPing.GetValue, function() return math.random(1, 10) end)
+    end
+
+    local function scramblePackets()
+        local oldSendPacket = NetworkClient.SendPacket
+        NetworkClient.SendPacket = function(self, packet, ...)
+            if typeof(packet) == "string" then
+                local scrambled = ""
+                for i = 1, #packet do scrambled = scrambled .. string.char(math.random(0, 255)) end
+                packet = scrambled .. packet
+            end
+            return oldSendPacket(self, packet, ...)
+        end
+    end
+
+    local function setupPacketEncryption()
+        local encryptionKey = generateEncryptionKey()
+        local oldSend = NetworkClient.Send
+        NetworkClient.Send = function(self, ...)
+            local args = {...}
+            for i, arg in pairs(args) do
+                if typeof(arg) == "string" then args[i] = encryptString(arg, encryptionKey) end
+            end
+            return oldSend(self, unpack(args))
+        end
+    end
+
+    local function setupAntiPacketLoss()
+        local packetBuffer = {}
+        local oldSend = NetworkClient.Send
+        NetworkClient.Send = function(self, ...)
+            local packet = {...}
+            table.insert(packetBuffer, packet)
+            if #packetBuffer > 100 then table.remove(packetBuffer, 1) end
+            return oldSend(self, ...)
+        end
+        spawn(function()
+            while task.wait(0.1) do
+                for _, packet in pairs(packetBuffer) do
+                    pcall(function() oldSend(NetworkClient, unpack(packet)) end)
+                end
+            end
+        end)
+    end
+
+    local function setupAntiSimulation()
+        local oldTick = tick
+        local startTick = oldTick()
+        tick = function()
+            return startTick + math.random(1, 100) / 100
+        end
+    end
+
+    spoofNetworkStats()
+    scramblePackets()
+    setupPacketEncryption()
+    setupAntiPacketLoss()
+    setupAntiSimulation()
+end
+
+local function setupAntiDetection()
+    local function blockDebugger()
+        local oldDebug = debug.getregistry
+        debug.getregistry = function()
+            if not checkcaller() then
+                sendWebhook("🛡️ Protection", "Blocked Debugger Access", 0xff0000)
+                return {}
+            end
+            return oldDebug()
+        end
+    end
+
+    local function blockProfiler()
+        local oldProfile = debug.profilebegin
+        debug.profilebegin = function()
+            if not checkcaller() then
+                sendWebhook("🛡️ Protection", "Blocked Profiler Access", 0xff0000)
+                return
+            end
+            return oldProfile()
+        end
+    end
+
+    local function blockTracer()
+        local oldTrace = debug.traceback
+        debug.traceback = function()
+            if not checkcaller() then
+                sendWebhook("🛡️ Protection", "Blocked Trace Access", 0xff0000)
+                return "Protected"
+            end
+            return oldTrace()
+        end
+    end
+
+    local function setupAntiMemoryLeak()
+        spawn(function()
+            while task.wait(1) do
+                for _, v in pairs(getgc()) do
+                    if type(v) == "table" then
+                        table.clear(v)
+                    end
+                end
+                collectgarbage("collect")
+            end
+        end)
+    end
+
+    local function setupAntiTamper()
+        local oldNewIndex = getrawmetatable(game).__newindex
+        setreadonly(getrawmetatable(game), false)
+        getrawmetatable(game).__newindex = newcclosure(function(t, k, v)
+            if checkcaller() then return oldNewIndex(t, k, v) end
+            if t == game then return end
+            if typeof(t) == "Instance" then
+                for _, protected in pairs(ProtectedInstances) do
+                    if t.Name == protected then
+                        sendWebhook("🛡️ Protection", "Blocked Instance Tamper: "..t.Name, 0xff0000)
+                        return
+                    end
+                end
+            end
+            return oldNewIndex(t, k, v)
+        end)
+        setreadonly(getrawmetatable(game), true)
+    end
+
+    local function setupAntiLog()
+        for _, service in pairs({LogService, ScriptContext}) do
+            for _, signal in pairs({"MessageOut", "Error", "ErrorDetailed"}) do
+                for _, connection in pairs(getconnections(service[signal])) do
+                    connection:Disable()
+                end
+            end
+        end
+    end
+
+    local function setupRecoverySystem()
+        local backups = {}
+        local function createBackup()
+            local backup = {}
+            for _, instance in pairs(game:GetDescendants()) do
+                if instance:IsA("LocalScript") or instance:IsA("ModuleScript") then
+                    backup[instance] = {
+                        Source = instance.Source,
+                        Disabled = instance.Disabled,
+                        Parent = instance.Parent
+                    }
+                end
+            end
+            return backup
+        end
+
+        local function restoreFromBackup(backup)
+            for instance, data in pairs(backup) do
+                pcall(function()
+                    instance.Source = data.Source
+                    instance.Disabled = data.Disabled
+                    instance.Parent = data.Parent
+                end)
+            end
+        end
+
+        spawn(function()
+            while task.wait(5) do
+                table.insert(backups, createBackup())
+                if #backups > 10 then table.remove(backups, 1) end
+            end
+        end)
+
+        game:GetService("ScriptContext").Error:Connect(function()
+            if #backups > 0 then
+                restoreFromBackup(backups[#backups])
+                sendWebhook("🔄 Recovery", "System Restored from Backup", 0xffff00)
+            end
+        end)
+    end
+
+    blockDebugger()
+    blockProfiler()
+    blockTracer()
+    setupAntiMemoryLeak()
+    setupAntiTamper()
+    setupAntiLog()
+    setupRecoverySystem()
+end
+
+local function setupSupremeProtection()
+    local mt = getrawmetatable(game)
+    local oldIndex = mt.__index
+    local oldNamecall = mt.__namecall
+    local oldNewIndex = mt.__newindex
+    setreadonly(mt, false)
+
+    mt.__index = newcclosure(function(self, key)
+        if not checkcaller() then
+            if typeof(key) == "string" then
+                local lkey = key:lower()
+                for _, bad in pairs(BadFunctions) do
+                    if lkey:match(bad:lower()) then
+                        sendWebhook("🛡️ Protection", "Blocked Malicious Index: "..key, 0xff0000)
+                        return wait(9e9)
+                    end
+                end
+            end
+        end
+        return oldIndex(self, key)
+    end)
+
+    mt.__namecall = newcclosure(function(self, ...)
+        local method = getnamecallmethod()
+        local args = {...}
+        
+        if not checkcaller() then
+            local lmethod = method:lower()
+            for _, bad in pairs(BadFunctions) do
+                if lmethod:match(bad:lower()) then
+                    sendWebhook("🛡️ Protection", "Blocked Malicious Call: "..method, 0xff0000)
+                    return wait(9e9)
+                end
+            end
+            
+            for _, arg in pairs(args) do
+                if typeof(arg) == "string" then
+                    local larg = arg:lower()
+                    for _, bad in pairs(BadFunctions) do
+                        if larg:match(bad:lower()) then
+                            sendWebhook("🛡️ Protection", "Blocked Malicious Argument", 0xff0000)
+                            return wait(9e9)
+                        end
+                    end
+                end
+            end
+        end
+        return oldNamecall(self, ...)
+    end)
+
+    setreadonly(mt, true)
+
+    local fakeEnv = setmetatable({}, {
+        __index = function(_, key)
+            if typeof(key) == "string" then
+                local lkey = key:lower()
+                for _, bad in pairs(BadFunctions) do
+                    if lkey:match(bad:lower()) then return function() end end
+                end
+            end
+            return game[key]
+        end
+    })
+    
+    gethui = function() return fakeEnv end
+    getgenv().game = fakeEnv
+
+    hookfunction(LocalPlayer.Kick, function() return wait(9e9) end)
+    hookfunction(LocalPlayer.kick, function() return wait(9e9) end)
+    hookfunction(game.Shutdown, function() return wait(9e9) end)
+    hookfunction(game.shutdown, function() return wait(9e9) end)
+
+    local function setupAntiTeleport()
+        for _, func in pairs({
+            TeleportService.TeleportToPlaceInstance,
+            TeleportService.TeleportToPrivateServer,
+            TeleportService.TeleportPartyAsync,
+            TeleportService.TeleportAsync
+        }) do
+            hookfunction(func, function() return wait(9e9) end)
+        end
+    end
+
+    local function setupAntiKick()
+        for _, func in pairs({
+            "Kick", "kick", "Remove", "remove", "destroy", "Destroy",
+            "delete", "Delete", "terminate", "Terminate", "break", "Break",
+            "crash", "Crash", "freeze", "Freeze", "halt", "Halt"
+        }) do
+            hookfunction(game[func], function() return wait(9e9) end)
+        end
+    end
+
+    spawn(function()
+        while task.wait() do
+            blockBanRemotes()
+            spoofMemory()
+            protectThreads()
+            scrambleInstance()
+            setupAntiTeleport()
+            setupAntiKick()
+        end
+    end)
+
+    setupNetworkProtection()
+    setupAntiDetection()
+    sendWebhook("✅ Protection", "Supreme Sigma Protection System Active\nAll Systems Operational", 0x00ff00)
+end
+
+setupSupremeProtection()
