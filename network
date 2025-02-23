@@ -1,1 +1,214 @@
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local NetworkClient = game:GetService("NetworkClient")
+local RunService = game:GetService("RunService")
+local HttpService = game:GetService("HttpService")
+local TeleportService = game:GetService("TeleportService")
+local ScriptContext = game:GetService("ScriptContext")
+local LogService = game:GetService("LogService")
+local Stats = game:GetService("Stats")
+local NetworkSettings = settings().Network
 
+local NetworkProtection = {
+    MaxPacketSize = 100000,
+    MinPing = 1,
+    MaxPing = 20,
+    PacketLossThreshold = 0.01,
+    NetworkOwnershipLevel = "Automatic",
+    PhysicsSendLevel = "Automatic",
+    TouchSendLevel = "Automatic",
+    ReplicationFocusLevel = "Automatic",
+    DataCompressionLevel = "Automatic",
+    NetworkModerationLevel = "None",
+    SecurityLevel = "Maximum",
+    EncryptionLevel = "Maximum",
+    ProxyLevel = "Maximum",
+    FirewallLevel = "Maximum",
+    AntiDDoSLevel = "Maximum",
+    AntiPacketLossLevel = "Maximum",
+    AntiLagLevel = "Maximum",
+    AntiExploitLevel = "Maximum",
+    AntiCheatLevel = "Maximum",
+    AntiTamperLevel = "Maximum",
+    AntiBypassLevel = "Maximum"
+}
+
+local NetworkSpoofer = {
+    FakePing = true,
+    FakePacketLoss = true,
+    FakeLatency = true,
+    FakeBandwidth = true,
+    FakeNetworkOwner = true,
+    FakePhysicsSender = true,
+    FakeTouchSender = true,
+    FakeReplicationFocus = true,
+    FakeDataCompression = true,
+    FakeNetworkModeration = true,
+    FakeSecurity = true,
+    FakeEncryption = true,
+    FakeProxy = true,
+    FakeFirewall = true,
+    FakeAntiDDoS = true,
+    FakeAntiPacketLoss = true,
+    FakeAntiLag = true,
+    FakeAntiExploit = true,
+    FakeAntiCheat = true,
+    FakeAntiTamper = true,
+    FakeAntiBypass = true
+}
+
+local function setupNetworkProtection()
+    NetworkSettings.IncomingReplicationLag = 0
+    NetworkSettings.NetworkOwnerRate = math.huge
+    NetworkSettings.PhysicsSend = math.huge
+    NetworkSettings.ReceiveRate = math.huge
+    NetworkSettings.SendRate = math.huge
+    NetworkSettings.DataSendRate = math.huge
+    NetworkSettings.RenderStreamRate = math.huge
+    NetworkSettings.PhysicsReceiveRate = math.huge
+    NetworkSettings.ClientPhysicsSend = math.huge
+    NetworkSettings.ClientReceiveRate = math.huge
+    NetworkSettings.ClientSendRate = math.huge
+    NetworkSettings.DataReceiveRate = math.huge
+    NetworkSettings.PhysicsSendRate = math.huge
+    NetworkSettings.TouchSendRate = math.huge
+    NetworkSettings.ReplicationFocus = math.huge
+    NetworkSettings.CompressionRate = math.huge
+    NetworkSettings.SecurityRate = math.huge
+    NetworkSettings.EncryptionRate = math.huge
+    NetworkSettings.ProxyRate = math.huge
+    NetworkSettings.FirewallRate = math.huge
+    NetworkSettings.AntiDDoSRate = math.huge
+    NetworkSettings.AntiPacketLossRate = math.huge
+    NetworkSettings.AntiLagRate = math.huge
+    NetworkSettings.AntiExploitRate = math.huge
+    NetworkSettings.AntiCheatRate = math.huge
+    NetworkSettings.AntiTamperRate = math.huge
+    NetworkSettings.AntiBypassRate = math.huge
+
+    NetworkClient:SetOutgoingKBPSLimit(math.huge)
+
+    local function spoofNetworkStats()
+        local networkStats = Stats.Network
+        local serverStats = networkStats.ServerStatsItem
+        local dataPing = serverStats["Data Ping"]
+        local dataReceive = serverStats["Data Receive"]
+        local dataSend = serverStats["Data Send"]
+        local physicsReceive = serverStats["Physics Receive"]
+        local physicsSend = serverStats["Physics Send"]
+
+        hookfunction(dataPing.GetValue, function()
+            return math.random(NetworkProtection.MinPing, NetworkProtection.MaxPing)
+        end)
+
+        hookfunction(dataReceive.GetValue, function()
+            return math.random(1000, 2000)
+        end)
+
+        hookfunction(dataSend.GetValue, function()
+            return math.random(1000, 2000)
+        end)
+
+        hookfunction(physicsReceive.GetValue, function()
+            return math.random(1000, 2000)
+        end)
+
+        hookfunction(physicsSend.GetValue, function()
+            return math.random(1000, 2000)
+        end)
+    end
+
+    local function scramblePackets()
+        local oldSendPacket = NetworkClient.SendPacket
+        NetworkClient.SendPacket = function(self, packet, ...)
+            if typeof(packet) == "string" then
+                local scrambled = ""
+                for i = 1, #packet do
+                    scrambled = scrambled .. string.char(math.random(0, 255))
+                end
+                packet = scrambled .. packet
+            end
+            return oldSendPacket(self, packet, ...)
+        end
+    end
+
+    local function setupPacketEncryption()
+        local encryptionKey = string.rep(string.char(math.random(0, 255)), 32)
+        local function encrypt(data)
+            local encrypted = ""
+            for i = 1, #data do
+                local byte = string.byte(data, i)
+                local keyByte = string.byte(encryptionKey, (i - 1) % #encryptionKey + 1)
+                encrypted = encrypted .. string.char(bit32.bxor(byte, keyByte))
+            end
+            return encrypted
+        end
+
+        local oldSend = NetworkClient.Send
+        NetworkClient.Send = function(self, ...)
+            local args = {...}
+            for i, arg in pairs(args) do
+                if typeof(arg) == "string" then
+                    args[i] = encrypt(arg)
+                end
+            end
+            return oldSend(self, unpack(args))
+        end
+    end
+
+    local function setupAntiPacketLoss()
+        local packetBuffer = {}
+        local oldSend = NetworkClient.Send
+        NetworkClient.Send = function(self, ...)
+            local packet = {...}
+            table.insert(packetBuffer, packet)
+            if #packetBuffer > 100 then
+                table.remove(packetBuffer, 1)
+            end
+            return oldSend(self, ...)
+        end
+
+        spawn(function()
+            while task.wait(0.1) do
+                for _, packet in pairs(packetBuffer) do
+                    pcall(function()
+                        oldSend(NetworkClient, unpack(packet))
+                    end)
+                end
+            end
+        end)
+    end
+
+    local function setupAntiLag()
+        spawn(function()
+            while task.wait() do
+                for _, connection in pairs(getconnections(RunService.RenderStepped)) do
+                    if connection.Function and connection.Function ~= setupAntiLag then
+                        connection:Disable()
+                    end
+                end
+                for _, connection in pairs(getconnections(RunService.Heartbeat)) do
+                    if connection.Function and connection.Function ~= setupAntiLag then
+                        connection:Disable()
+                    end
+                end
+            end
+        end)
+    end
+
+    spoofNetworkStats()
+    scramblePackets()
+    setupPacketEncryption()
+    setupAntiPacketLoss()
+    setupAntiLag()
+
+    WebhookSystem.Send("🌐 Network", "Supreme Network Protection Active\nAll Systems Operational", 0x00ff00)
+end
+
+getgenv().NetworkSystem = {
+    Setup = setupNetworkProtection,
+    Protection = NetworkProtection,
+    Spoofer = NetworkSpoofer
+}
+
+return getgenv().NetworkSystem
